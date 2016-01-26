@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+
+# Absolutely not my code. Just here for me to do brainless git clone
+
+use strict;
+use warnings;
+use Regexp::Common qw/net/;
+
+sub _calc_netmask {
+    my($subnet) = @_;
+
+    # e.g.: 10.0.0.0/24 192.168.1.0/16
+    my($network, $netbit) = split /\//, $subnet;
+
+    my $_bit         = ( 2 ** (32 - $netbit) ) - 1;
+    my ($full_mask)  = unpack( "N", pack( "C4", (255) x4) );
+    my $netmask      = join( '.', unpack( "C4", pack( "N", ( $full_mask ^ $_bit ) ) ) );
+
+    return $netmask;
+}
+
+foreach my $line (<>){
+    chomp($line);
+    printf "%s %s\n", $line =~ /($RE{net}{IPv4})/, _calc_netmask($line);
+}

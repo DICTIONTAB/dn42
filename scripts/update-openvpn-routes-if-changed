@@ -1,0 +1,41 @@
+#!/bin/bash
+#sum4=""
+#sum6=""
+#while [ 1 ]; do
+#	sum4_tmp=(`md5sum /proc/net/route`)
+#	sum6_tmp=(`ip -6 r s | md5sum`)
+#	if [ "$sum4" != "$sum4_tmp" ] || [ "$sum6" != "$sum6_tmp" ]; then
+#		sum4="$sum4_tmp"
+#		sum6="$sum6_tmp"
+#		echo "Routing table changed. Updating openvpn routes"
+#		update-dn42-routes-openvpn
+#		echo "Update finished"
+#	fi
+#	sleep 5
+#done
+
+function log
+{
+        echo `date "$date_format"` "$1"
+	if [ -n "$log_file" ]; then
+		echo `date "$date_format"` "$1" >> "$log_file"
+	fi
+}
+
+log_file="$1"
+date_format="+[%d.%m.%Y %H:%M:%S]"
+log "Running initial update..."
+log "`update-dn42-routes-openvpn`"
+sum4=""
+sum6=""
+ip mon route | while read rtdiff; do # Get each route change
+	log "Route change: $rtdiff"
+	sum4_tmp=(`md5sum /proc/net/route`)
+	sum6_tmp=(`ip -6 r s | md5sum`)
+	if [ "$sum4" != "$sum4_tmp" ] || [ "$sum6" != "$sum6_tmp" ]; then # But don't run route update for each route
+		sum4="$sum4_tmp"
+		sum6="$sum6_tmp"
+		log "Routing table changed. Updating openvpn routes"
+		log "`update-dn42-routes-openvpn`"
+	fi
+done
